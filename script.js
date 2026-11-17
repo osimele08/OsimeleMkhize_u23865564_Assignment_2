@@ -86,3 +86,81 @@ function setupFilters() {
     refreshDashboard();
   });
 }
+
+// split a csv line safely while respecting commas inside double quotes
+function parseCSVLine(line) {
+  const result = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === "," && !inQuotes) {
+      result.push(current.trim());
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+  result.push(current.trim());
+  return result;
+}
+
+// load the dataset from the csv file
+async function loadDataset() {
+  try {
+    const response = await fetch("wdi_brics_data.csv");
+    const csvText = await response.text();
+    const lines = csvText.split(/\r?\n/).filter(function (row) {
+      return row.trim() !== "";
+    });
+
+    // read header row and extract clean year strings (2010 to 2024)
+    const headers = parseCSVLine(lines[0]);
+    const yearColumns = [];
+
+    for (let i = 4; i < headers.length; i++) {
+      const yearText = headers[i].split(" ")[0];
+      yearsList.push(yearText);
+      yearColumns.push({ index: i, year: yearText });
+    }
+
+    // parse each data row and skip world bank footer notes at the bottom
+    const countrySet = new Set();
+
+    for (let r = 1; r < lines.length; r++) {
+      const cols = parseCSVLine(lines[r]);
+      const countryName = cols[0];
+      const countryCode = cols[1];
+      const seriesName = cols[2];
+      const seriesCode = cols[3];
+
+      if (!seriesCode || seriesCode === "") {
+        continue;
+      }
+
+      const valuesByYear = {};
+      yearColumns.forEach(function (colInfo) {
+        const rawVal = cols[colInfo.index];
+        valuesByYear[colInfo.year] = rawVal === ".." || rawVal === "" ? null : parseFloat(rawVal);
+      });
+
+      countrySet.add(countryName);
+      allRecords.push({
+        country: countryName,
+        code: countryCode,
+        seriesName: seriesName,
+        seriesCode: seriesCode,
+        values: valuesByYear
+      });
+    }
+
+    countriesList = Array.from(countrySet);
+    setupFilters();
+    refreshDashboard();
+  } catch (error) {
+    console.error("Failed to load CSV dataset:", error);
+  }
+}
