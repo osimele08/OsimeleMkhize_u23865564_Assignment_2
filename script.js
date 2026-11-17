@@ -164,3 +164,106 @@ async function loadDataset() {
     console.error("Failed to load CSV dataset:", error);
   }
 }
+
+// format numbers cleanly depending on the selected indicator
+function formatMetricValue(value, indicatorCode) {
+  if (value === null || isNaN(value)) {
+    return "--";
+  }
+  if (indicatorCode === "NY.GDP.PCAP.CD") {
+    return "$" + value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  return value.toFixed(2) + "%";
+}
+
+// calculate median from an array of numbers
+function calculateMedian(numbers) {
+  if (numbers.length === 0) {
+    return null;
+  }
+  const sorted = numbers.slice().sort(function (a, b) {
+    return a - b;
+  });
+  const mid = Math.floor(sorted.length / 2);
+
+  if (sorted.length % 2 === 0) {
+    return (sorted[mid - 1] + sorted[mid]) / 2;
+  }
+  return sorted[mid];
+}
+
+// compute summary statistics and update the two kpi cards
+function updateSummaryIndicators(selectedCountry, selectedYear, selectedIndicator) {
+  const matchingRows = allRecords.filter(function (row) {
+    const matchesIndicator = row.seriesCode === selectedIndicator;
+    const matchesCountry = selectedCountry === "ALL" || row.country === selectedCountry;
+    return matchesIndicator && matchesCountry;
+  });
+
+  // collect values for the selected year
+  let highestVal = -Infinity;
+  let highestCountry = "";
+  const yearValues = [];
+
+  matchingRows.forEach(function (row) {
+    const val = row.values[selectedYear];
+    if (val !== null && !isNaN(val)) {
+      yearValues.push(val);
+      if (val > highestVal) {
+        highestVal = val;
+        highestCountry = row.country;
+      }
+    }
+  });
+
+  // stat 1: peak value in selection (or peak year if single country selected)
+  const statOneTitle = document.getElementById("stat-one-title");
+  const statOneValue = document.getElementById("stat-one-value");
+  const statOneDesc = document.getElementById("stat-one-desc");
+
+  if (selectedCountry === "ALL") {
+    statOneTitle.textContent = "HIGHEST VALUE IN BLOC (" + selectedYear + ")";
+    statOneValue.textContent = formatMetricValue(highestVal, selectedIndicator);
+    statOneDesc.textContent = "Leading economy: " + highestCountry;
+  } else {
+    // find the country's highest year across 2010-2024
+    const singleRow = matchingRows[0];
+    let peakYear = selectedYear;
+    let peakYearVal = -Infinity;
+
+    yearsList.forEach(function (yr) {
+      const v = singleRow.values[yr];
+      if (v !== null && v > peakYearVal) {
+        peakYearVal = v;
+        peakYear = yr;
+      }
+    });
+
+    statOneTitle.textContent = selectedCountry.toUpperCase() + " PEAK (2010\u20132024)";
+    statOneValue.textContent = formatMetricValue(peakYearVal, selectedIndicator);
+    statOneDesc.textContent = "Highest recorded in " + peakYear;
+  }
+
+  // stat 2: median benchmark across active selection
+  const statTwoTitle = document.getElementById("stat-two-title");
+  const statTwoValue = document.getElementById("stat-two-value");
+  const statTwoDesc = document.getElementById("stat-two-desc");
+
+  if (selectedCountry === "ALL") {
+    const medianVal = calculateMedian(yearValues);
+    statTwoTitle.textContent = "BRICS MEDIAN BENCHMARK (" + selectedYear + ")";
+    statTwoValue.textContent = formatMetricValue(medianVal, selectedIndicator);
+    statTwoDesc.textContent = "Middle value across all 10 member states";
+  } else {
+    // compute 15-year median for the selected country
+    const singleRow = matchingRows[0];
+    const allYearsVals = yearsList
+      .map(function (yr) { return singleRow.values[yr]; })
+      .filter(function (v) { return v !== null; });
+
+    const countryMedian = calculateMedian(allYearsVals);
+    statTwoTitle.textContent = selectedCountry.toUpperCase() + " 15-YEAR MEDIAN";
+    statTwoValue.textContent = formatMetricValue(countryMedian, selectedIndicator);
+    statTwoDesc.textContent = "Median across 2010\u20132024 observations";
+  }
+}
