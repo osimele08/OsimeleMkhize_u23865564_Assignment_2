@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BRICS Macro &amp; Infrastructure Observatory</title>
+  <!-- link custom stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+  <!-- load chart.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <div class="app-shell">
+
+    <!-- left sidebar navigation -->
+    <aside class="sidebar">
+      <div class="brand-box">
+        <span class="brand-badge">WDI // 2010&ndash;2024</span>
+        <h2 class="brand-title">BRICS PULSE</h2>
+        <p class="brand-sub">Macroeconomic &amp; Energy Monitor</p>
+      </div>
+
+      <nav class="side-nav">
+        <button id="nav-home" class="side-link active" type="button">
+          <span>Project Overview</span>
+        </button>
+        <button id="nav-dashboard" class="side-link" type="button">
+          <span>Data Explorer</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <p><strong>Cohort:</strong> 10 Member States</p>
+        <p><strong>Source:</strong> World Bank WDI</p>
+      </div>
+    </aside>
+
+    <!-- main content wrapper -->
+    <div class="main-area">
+
+      <!-- home / overview view -->
+      <section id="page-home" class="page-view active">
+        <div class="split-hero">
+          <div class="hero-left">
+            <p class="eyebrow">GLOBAL EMERGING ECONOMIES</p>
+            <h1>Tracking Growth, Labor &amp; Power Across BRICS</h1>
+            <p class="lead">
+              An interactive browser-based analytics tool built on World Bank Development
+              Indicators to examine 15 years of economic shifts across ten BRICS nations.
+            </p>
+            <button id="open-dashboard-btn" class="cta-button" type="button">
+              Launch Data Explorer &rarr;
+            </button>
+          </div>
+
+          <div class="hero-right">
+            <div class="snapshot-panel">
+              <h3>DATASET SNAPSHOT</h3>
+              <div class="snapshot-row">
+                <span>Economies Covered</span>
+                <strong>10 Countries</strong>
+              </div>
+              <div class="snapshot-row">
+                <span>Time Horizon</span>
+                <strong>2010 &ndash; 2024 (15 Yrs)</strong>
+              </div>
+              <div class="snapshot-row">
+                <span>Core Indicators</span>
+                <strong>4 WDI Series</strong>
+              </div>
+              <div class="snapshot-row">
+                <span>Total Observations</span>
+                <strong>600 Data Points</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- three-card horizontal strip -->
+        <div class="three-strip">
+          <article class="strip-card">
+            <span class="step-num">01</span>
+            <h3>Dataset Source</h3>
+            <p>
+              Extracted from the World Bank World Development Indicators (WDI) DataBank,
+              covering Brazil, China, Egypt, Ethiopia, India, Indonesia, Iran, Russia,
+              South Africa, and the UAE.
+            </p>
+          </article>
+
+          <article class="strip-card">
+            <span class="step-num">02</span>
+            <h3>Metrics Analyzed</h3>
+            <p>
+              Compares GDP per capita (current US$), annual GDP growth (%), total
+              unemployment rate (modeled ILO %), and population access to electricity (%).
+            </p>
+          </article>
+
+          <article class="strip-card">
+            <span class="step-num">03</span>
+            <h3>Interactive Filtering</h3>
+            <p>
+              Isolate any individual BRICS member or compare all ten nations across a
+              chosen year with live summary indicators and three responsive charts.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <!-- analytics / data explorer view -->
+      <section id="page-dashboard" class="page-view hidden">
+        <header class="dash-topbar">
+          <div>
+            <h1>BRICS Data Explorer</h1>
+            <p>Select a country, year, or indicator below to update metrics and charts</p>
+          </div>
+
+          <!-- filter controls -->
+          <div class="filter-panel">
+            <div class="filter-item">
+              <label for="select-country">Country</label>
+              <select id="select-country">
+                <option value="ALL">All 10 BRICS Countries</option>
+              </select>
+            </div>
+
+            <div class="filter-item">
+              <label for="select-year">Year</label>
+              <select id="select-year"></select>
+            </div>
+
+            <div class="filter-item">
+              <label for="select-indicator">Indicator</label>
+              <select id="select-indicator">
+                <option value="NY.GDP.PCAP.CD">GDP per Capita (US$)</option>
+                <option value="NY.GDP.MKTP.KD.ZG">GDP Growth (Annual %)</option>
+                <option value="SL.UEM.TOTL.ZS">Unemployment Rate (%)</option>
+                <option value="EG.ELC.ACCS.ZS">Access to Electricity (%)</option>
+              </select>
+            </div>
+          </div>
+        </header>
+
+        <!-- two summary indicators -->
+        <div class="stats-row">
+          <div class="stat-box">
+            <span class="stat-title" id="stat-one-title">MEAN GDP PER CAPITA (2024)</span>
+            <div class="stat-number" id="stat-one-value">--</div>
+            <span class="stat-desc" id="stat-one-desc">Calculated from active filter</span>
+          </div>
+
+          <div class="stat-box">
+            <span class="stat-title" id="stat-two-title">MEAN UNEMPLOYMENT RATE (2024)</span>
+            <div class="stat-number" id="stat-two-value">--</div>
+            <span class="stat-desc" id="stat-two-desc">Modeled ILO estimate (%)</span>
+          </div>
+        </div>
+
+        <!-- three charts area -->
+        <div class="visuals-grid">
+          <div class="visual-box span-two">
+            <h3 id="chart-line-heading">Annual GDP Growth Trend (2010 &ndash; 2024)</h3>
+            <div class="chart-holder">
+              <canvas id="lineChart"></canvas>
+            </div>
+          </div>
+
+          <div class="visual-box">
+            <h3 id="chart-bar-heading">Country Ranking by Selected Indicator</h3>
+            <div class="chart-holder">
+              <canvas id="barChart"></canvas>
+            </div>
+          </div>
+
+          <div class="visual-box">
+            <h3 id="chart-doughnut-heading">Electricity Access Share Across BRICS</h3>
+            <div class="chart-holder">
+              <canvas id="doughnutChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- link javascript file -->
+  <script src="script.js"></script>
+</body>
+</html>
