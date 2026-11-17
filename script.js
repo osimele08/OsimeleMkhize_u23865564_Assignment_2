@@ -267,3 +267,223 @@ function updateSummaryIndicators(selectedCountry, selectedYear, selectedIndicato
     statTwoDesc.textContent = "Median across 2010\u20132024 observations";
   }
 }
+
+// render chart 1: multi-year line chart (2010 to 2024)
+function renderLineChart(selectedCountry, selectedIndicator) {
+  const indicatorRows = allRecords.filter(function (row) {
+    return row.seriesCode === selectedIndicator;
+  });
+
+  const indicatorLabel = indicatorRows.length > 0 ? indicatorRows[0].seriesName : "";
+  document.getElementById("chart-line-heading").textContent =
+    indicatorLabel + " Trajectory (2010 \u2013 2024)";
+
+  const datasets = indicatorRows.map(function (row, idx) {
+    const isHighlighted = selectedCountry === "ALL" || row.country === selectedCountry;
+    const baseColor = countryColors[idx % countryColors.length];
+
+    return {
+      label: row.country,
+      data: yearsList.map(function (yr) { return row.values[yr]; }),
+      borderColor: isHighlighted ? baseColor : "rgba(148, 163, 184, 0.18)",
+      backgroundColor: baseColor,
+      borderWidth: row.country === selectedCountry ? 3.5 : 2,
+      pointRadius: isHighlighted ? 3 : 0,
+      tension: 0.25
+    };
+  });
+
+  if (trendChartInstance) {
+    trendChartInstance.destroy();
+  }
+
+  const ctx = document.getElementById("lineChart").getContext("2d");
+  trendChartInstance = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: yearsList,
+      datasets: datasets
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: { color: "#cbd5e1", boxWidth: 12, font: { size: 11 } }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: "#94a3b8" },
+          grid: { color: "rgba(51, 65, 85, 0.4)" }
+        },
+        y: {
+          ticks: { color: "#94a3b8" },
+          grid: { color: "rgba(51, 65, 85, 0.4)" }
+        }
+      }
+    }
+  });
+}
+
+// render chart 2: horizontal bar chart ranking all 10 countries for selected year
+function renderHorizontalBarChart(selectedCountry, selectedYear, selectedIndicator) {
+  const indicatorRows = allRecords.filter(function (row) {
+    return row.seriesCode === selectedIndicator;
+  });
+
+  const indicatorLabel = indicatorRows.length > 0 ? indicatorRows[0].seriesName : "";
+  document.getElementById("chart-bar-heading").textContent =
+    "Country Ranking: " + indicatorLabel + " (" + selectedYear + ")";
+
+  // sort countries from highest to lowest value in the chosen year
+  const ranked = indicatorRows
+    .map(function (row) {
+      return {
+        country: row.country,
+        value: row.values[selectedYear]
+      };
+    })
+    .sort(function (a, b) {
+      return b.value - a.value;
+    });
+
+  const labels = ranked.map(function (item) { return item.country; });
+  const values = ranked.map(function (item) { return item.value; });
+  const barColors = ranked.map(function (item) {
+    if (selectedCountry === "ALL" || item.country === selectedCountry) {
+      return "#38bdf8";
+    }
+    return "rgba(56, 189, 248, 0.25)";
+  });
+
+  if (rankBarChartInstance) {
+    rankBarChartInstance.destroy();
+  }
+
+  const ctx = document.getElementById("barChart").getContext("2d");
+  rankBarChartInstance = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: selectedYear,
+          data: values,
+          backgroundColor: barColors,
+          borderRadius: 4
+        }
+      ]
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        x: {
+          ticks: { color: "#94a3b8" },
+          grid: { color: "rgba(51, 65, 85, 0.4)" }
+        },
+        y: {
+          ticks: { color: "#e2e8f0", font: { size: 11 } },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+}
+
+// render chart 3: radar chart comparing normalized multi-indicator profile (0 to 100 scale)
+function renderRadarChart(selectedCountry, selectedYear) {
+  const targetCountry = selectedCountry === "ALL" ? "South Africa" : selectedCountry;
+  document.getElementById("chart-radar-heading").textContent =
+    targetCountry + " vs. BRICS Average (" + selectedYear + ", Normalized)";
+
+  const codes = ["NY.GDP.PCAP.CD", "NY.GDP.MKTP.KD.ZG", "SL.UEM.TOTL.ZS", "EG.ELC.ACCS.ZS"];
+  const axisLabels = ["GDP per Capita", "GDP Growth", "Unemployment", "Electricity Access"];
+
+  // normalize each indicator relative to the maximum value in that year so all 4 fit on 0-100
+  const targetScores = [];
+  const blocAvgScores = [];
+
+  codes.forEach(function (code) {
+    const rows = allRecords.filter(function (r) { return r.seriesCode === code; });
+    const vals = rows.map(function (r) { return r.values[selectedYear]; }).filter(function (v) { return v !== null; });
+
+    const maxVal = Math.max.apply(null, vals);
+    const minVal = Math.min.apply(null, vals);
+    const range = maxVal - minVal === 0 ? 1 : maxVal - minVal;
+
+    const avgVal = vals.reduce(function (sum, v) { return sum + v; }, 0) / vals.length;
+    const countryRow = rows.find(function (r) { return r.country === targetCountry; });
+    const countryVal = countryRow ? countryRow.values[selectedYear] : avgVal;
+
+    targetScores.push(Number((((countryVal - minVal) / range) * 100).toFixed(1)));
+    blocAvgScores.push(Number((((avgVal - minVal) / range) * 100).toFixed(1)));
+  });
+
+  if (radarChartInstance) {
+    radarChartInstance.destroy();
+  }
+
+  const ctx = document.getElementById("radarChart").getContext("2d");
+  radarChartInstance = new Chart(ctx, {
+    type: "radar",
+    data: {
+      labels: axisLabels,
+      datasets: [
+        {
+          label: targetCountry,
+          data: targetScores,
+          borderColor: "#38bdf8",
+          backgroundColor: "rgba(56, 189, 248, 0.25)",
+          pointBackgroundColor: "#38bdf8"
+        },
+        {
+          label: "BRICS Mean",
+          data: blocAvgScores,
+          borderColor: "#f59e0b",
+          backgroundColor: "rgba(245, 158, 11, 0.18)",
+          pointBackgroundColor: "#f59e0b"
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: { color: "#cbd5e1", font: { size: 11 } }
+        }
+      },
+      scales: {
+        r: {
+          min: 0,
+          max: 100,
+          ticks: { display: false },
+          grid: { color: "rgba(148, 163, 184, 0.25)" },
+          angleLines: { color: "rgba(148, 163, 184, 0.25)" },
+          pointLabels: { color: "#e2e8f0", font: { size: 11 } }
+        }
+      }
+    }
+  });
+}
+
+// master function triggered whenever a filter changes
+function refreshDashboard() {
+  const selectedCountry = document.getElementById("select-country").value;
+  const selectedYear = document.getElementById("select-year").value;
+  const selectedIndicator = document.getElementById("select-indicator").value;
+
+  updateSummaryIndicators(selectedCountry, selectedYear, selectedIndicator);
+  renderLineChart(selectedCountry, selectedIndicator);
+  renderHorizontalBarChart(selectedCountry, selectedYear, selectedIndicator);
+  renderRadarChart(selectedCountry, selectedYear);
+}
+
+// start loading the csv when the page opens
+loadDataset();
