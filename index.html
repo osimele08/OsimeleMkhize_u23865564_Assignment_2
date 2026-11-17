@@ -140,44 +140,50 @@
                 <option value="EG.ELC.ACCS.ZS">Access to Electricity (%)</option>
               </select>
             </div>
+
+            <div class="filter-item" style="justify-content: flex-end;">
+              <button id="reset-filters-btn" class="cta-button" type="button" style="padding: 9px 16px; font-size: 13px;">
+                Reset
+              </button>
+            </div>
           </div>
         </header>
 
         <!-- two summary indicators -->
         <div class="stats-row">
           <div class="stat-box">
-            <span class="stat-title" id="stat-one-title">MEAN GDP PER CAPITA (2024)</span>
+            <span class="stat-title" id="stat-one-title">HIGHEST VALUE IN SELECTION (2024)</span>
             <div class="stat-number" id="stat-one-value">--</div>
-            <span class="stat-desc" id="stat-one-desc">Calculated from active filter</span>
+            <span class="stat-desc" id="stat-one-desc">Leading BRICS economy</span>
           </div>
 
           <div class="stat-box">
-            <span class="stat-title" id="stat-two-title">MEAN UNEMPLOYMENT RATE (2024)</span>
+            <span class="stat-title" id="stat-two-title">MEDIAN BENCHMARK (2024)</span>
             <div class="stat-number" id="stat-two-value">--</div>
-            <span class="stat-desc" id="stat-two-desc">Modeled ILO estimate (%)</span>
+            <span class="stat-desc" id="stat-two-desc">Middle value across selection</span>
           </div>
         </div>
 
         <!-- three charts area -->
         <div class="visuals-grid">
           <div class="visual-box span-two">
-            <h3 id="chart-line-heading">Annual GDP Growth Trend (2010 &ndash; 2024)</h3>
+            <h3 id="chart-line-heading">15-Year Indicator Trajectory (2010 &ndash; 2024)</h3>
             <div class="chart-holder">
               <canvas id="lineChart"></canvas>
             </div>
           </div>
 
           <div class="visual-box">
-            <h3 id="chart-bar-heading">Country Ranking by Selected Indicator</h3>
+            <h3 id="chart-bar-heading">Ranked Country Comparison</h3>
             <div class="chart-holder">
               <canvas id="barChart"></canvas>
             </div>
           </div>
 
           <div class="visual-box">
-            <h3 id="chart-doughnut-heading">Electricity Access Share Across BRICS</h3>
+            <h3 id="chart-radar-heading">Multi-Indicator Development Profile</h3>
             <div class="chart-holder">
-              <canvas id="doughnutChart"></canvas>
+              <canvas id="radarChart"></canvas>
             </div>
           </div>
         </div>
